@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
-import pygame
 import random
+from abc import ABC, abstractmethod
+
+import pygame
 
 
 def create_sprite(img, sprite_size):
@@ -9,6 +10,15 @@ def create_sprite(img, sprite_size):
     sprite = pygame.Surface((sprite_size, sprite_size), pygame.HWSURFACE)
     sprite.blit(icon, (0, 0))
     return sprite
+
+
+class AbstractObject(ABC):
+
+    def __init__(self):
+        pass
+
+    def draw(self, display):
+        pass
 
 
 class Interactive(ABC):
@@ -21,6 +31,7 @@ class Interactive(ABC):
 class Ally(AbstractObject, Interactive):
 
     def __init__(self, icon, action, position):
+        super().__init__()
         self.sprite = icon
         self.action = action
         self.position = position
@@ -32,6 +43,7 @@ class Ally(AbstractObject, Interactive):
 class Creature(AbstractObject):
 
     def __init__(self, icon, stats, position):
+        super().__init__()
         self.sprite = icon
         self.stats = stats
         self.position = position
@@ -61,9 +73,20 @@ class Hero(Creature):
             self.hp = self.max_hp
 
 
+class Enemy(Creature, Interactive):
+
+    def __init__(self, icon, stats, xp, position):
+        super().__init__(icon, stats, position)
+        # TODO
+
+    def interact(self, engine, hero):
+        pass  # TODO
+
+
 class Effect(Hero):
 
-    def __init__(self, base):
+    def __init__(self, base, stats, icon):
+        super().__init__(stats, icon)
         self.base = base
         self.stats = self.base.stats.copy()
         self.apply_effect()
@@ -125,5 +148,19 @@ class Effect(Hero):
         pass
 
 
-# FIXME
-# add classes
+class Berserk(Effect):
+
+    def apply_effect(self):
+        pass  # TODO
+
+
+class Blessing(Effect):
+
+    def apply_effect(self):
+        pass  # TODO
+
+
+class Weakness(Effect):
+
+    def apply_effect(self):
+        pass  # TODO
