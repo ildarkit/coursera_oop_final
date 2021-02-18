@@ -22,7 +22,6 @@ class ScreenHandle(pygame.Surface):
         else:
             self.successor = None
             self.next_coord = (0, 0)
-        self.game_engine = None
         super().__init__(*args, **kwargs)
         self.fill(colors["wooden"])
 
@@ -32,7 +31,8 @@ class ScreenHandle(pygame.Surface):
             self.successor.draw(canvas)
 
     def connect_engine(self, engine):
-        self.game_engine = engine
+        if self.successor is not None:
+            self.successor.create_engine(engine)
 
 
 class GameSurface(ScreenHandle):
