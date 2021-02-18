@@ -1,4 +1,4 @@
-import Service
+import service
 
 
 class GameEngine:
@@ -36,28 +36,28 @@ class GameEngine:
     # MOVEMENT
     def move_up(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1] - 1][self.hero.position[0]] == Service.wall:
+        if self.map[self.hero.position[1] - 1][self.hero.position[0]] == service.wall:
             return
         self.hero.position[1] -= 1
         self.interact()
 
     def move_down(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1] + 1][self.hero.position[0]] == Service.wall:
+        if self.map[self.hero.position[1] + 1][self.hero.position[0]] == service.wall:
             return
         self.hero.position[1] += 1
         self.interact()
 
     def move_left(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1]][self.hero.position[0] - 1] == Service.wall:
+        if self.map[self.hero.position[1]][self.hero.position[0] - 1] == service.wall:
             return
         self.hero.position[0] -= 1
         self.interact()
 
     def move_right(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1]][self.hero.position[0] + 1] == Service.wall:
+        if self.map[self.hero.position[1]][self.hero.position[0] + 1] == service.wall:
             return
         self.hero.position[0] += 1
         self.interact()

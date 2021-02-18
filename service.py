@@ -2,7 +2,7 @@ import pygame
 import random
 import yaml
 import os
-import Objects
+import objects
 
 OBJECT_TEXTURE = os.path.join("texture", "objects")
 ENEMY_TEXTURE = os.path.join("texture", "enemies")
@@ -42,10 +42,10 @@ def apply_blessing(engine, hero):
         hero.gold -= int(20 * 1.5**engine.level) - \
             2 * hero.stats["intelligence"]
         if random.randint(0, 1) == 0:
-            engine.hero = Objects.Blessing(hero)
+            engine.hero = objects.Blessing(hero)
             engine.notify("Blessing applied")
         else:
-            engine.hero = Objects.Berserk(hero)
+            engine.hero = objects.Berserk(hero)
             engine.notify("Berserk applied")
     else:
         engine.score -= 0.1
@@ -63,7 +63,7 @@ def remove_effect(engine, hero):
 def add_gold(engine, hero):
     if random.randint(1, 10) == 1:
         engine.score -= 0.05
-        engine.hero = Objects.Weakness(hero)
+        engine.hero = objects.Weakness(hero)
         engine.notify("You were cursed")
     else:
         engine.score += 0.1
@@ -160,7 +160,7 @@ class RandomMap(MapFactory):
                                 coord = (random.randint(1, 39),
                                          random.randint(1, 39))
 
-                    self.objects.append(Objects.Ally(
+                    self.objects.append(objects.Ally(
                         prop['sprite'], prop['action'], coord))
 
             for obj_name in object_list_prob['ally']:
@@ -180,7 +180,7 @@ class RandomMap(MapFactory):
                                 intersect = True
                                 coord = (random.randint(1, 39),
                                          random.randint(1, 39))
-                    self.objects.append(Objects.Ally(
+                    self.objects.append(objects.Ally(
                         prop['sprite'], prop['action'], coord))
 
             for obj_name in object_list_prob['enemies']:
@@ -201,7 +201,7 @@ class RandomMap(MapFactory):
                                 coord = (random.randint(1, 39),
                                          random.randint(1, 39))
 
-                    self.objects.append(Objects.Enemy(
+                    self.objects.append(objects.Enemy(
                         prop['sprite'], prop, prop['experience'], coord))
 
             return self.objects
