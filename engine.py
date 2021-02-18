@@ -22,6 +22,7 @@ class ScreenHandle(pygame.Surface):
         else:
             self.successor = None
             self.next_coord = (0, 0)
+        self.game_engine = None
         super().__init__(*args, **kwargs)
         self.fill(colors["wooden"])
 
