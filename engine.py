@@ -15,16 +15,18 @@ colors = {
 class ScreenHandle(pygame.Surface):
 
     def __init__(self, *args, **kwargs):
-        if len(args) > 1:
-            self.successor = args[-1]
-            self.next_coord = args[-2]
-            args = args[:-2]
-        else:
-            self.successor = None
-            self.next_coord = (0, 0)
-        self.game_engine = None
         super().__init__(*args, **kwargs)
+        self.successor = None
+        self.next_coord = (0, 0)
+        self.game_engine = None
+
         self.fill(colors["wooden"])
+
+    def set_successor(self, successor):
+        self.successor = successor
+
+    def set_next_coord(self, coord):
+        self.next_coord = coord
 
     def draw(self, canvas):
         if self.successor is not None:
