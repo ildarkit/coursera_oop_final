@@ -1,123 +1,233 @@
-import pygame
 import os
-import objects
-import engine
+import random
+from abc import ABC, abstractmethod
+
+import pygame
+
 import logic
 import service
-
+from objects import Hero
+from handler import PyGameEventHandler
+from engine import (
+    GameSurface, ProgressBar,
+    InfoWindow, HelpWindow,
+    ScreenHandle
+)
 
 SCREEN_DIM = (800, 600)
-
-pygame.init()
-gameDisplay = pygame.display.set_mode(SCREEN_DIM)
-pygame.display.set_caption("MyRPG")
 KEYBOARD_CONTROL = True
 
-if not KEYBOARD_CONTROL:
-    import numpy as np
-    answer = np.zeros(4, dtype=float)
 
-base_stats = {
-    "strength": 20,
-    "endurance": 20,
-    "intelligence": 5,
-    "luck": 5
-}
-
-
-def create_game(sprite_size, is_new):
-    global hero, engine, drawer, iteration
-    if is_new:
-        hero = objects.Hero(base_stats, service.create_sprite(
-            os.path.join("texture", "Hero.png"), sprite_size))
-        engine = logic.GameEngine()
-        service.service_init(sprite_size)
-        service.reload_game(engine, hero)
-        with engine as SE:
-            drawer = SE.GameSurface((640, 480), pygame.SRCALPHA, (0, 480),
-                                    SE.ProgressBar((640, 120), (640, 0),
-                                                   SE.InfoWindow((160, 600), (50, 50),
-                                                                 SE.HelpWindow((700, 500), pygame.SRCALPHA, (0, 0),
-                                                                               SE.ScreenHandle(
-                                                                                   (0, 0))
-                                                                               ))))
-
-    else:
-        engine.sprite_size = sprite_size
-        hero.sprite = service.create_sprite(
-            os.path.join("texture", "Hero.png"), sprite_size)
-        service.service_init(sprite_size, False)
-
-    logic.GameEngine.sprite_size = sprite_size
-
-    drawer.connect_engine(engine)
-
-    iteration = 0
+class HeroConfig:
+    def __init__(self):
+        self.base_stats = {
+            "strength": 20,
+            "endurance": 20,
+            "intelligence": 5,
+            "luck": 5
+        }
+        self.path = os.path.join(
+            "texture", "Hero.png")
 
 
-size = 60
-create_game(size, True)
+class AbcGame(ABC):
 
-while engine.working:
+    @abstractmethod
+    def create_game(self):
+        pass
 
-    if KEYBOARD_CONTROL:
+    @abstractmethod
+    def run(self):
+        pass
+
+
+class PyGameHandler(PyGameEventHandler):
+
+    def __init__(self):
+        super().__init__()
+        pygame.init()
+        self.display = pygame.display.set_mode(SCREEN_DIM)
+        pygame.display.set_caption("MyRPG")
+
+    def event_loop(self):
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                engine.working = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_h:
-                    engine.show_help = not engine.show_help
-                if event.key == pygame.K_KP_PLUS:
-                    size = size + 1
-                    create_game(size, False)
-                if event.key == pygame.K_KP_MINUS:
-                    size = size - 1
-                    create_game(size, False)
-                if event.key == pygame.K_r:
-                    create_game(size, True)
-                if event.key == pygame.K_ESCAPE:
-                    engine.working = False
-                if engine.game_process:
-                    if event.key == pygame.K_UP:
-                        engine.move_up()
-                        iteration += 1
-                    elif event.key == pygame.K_DOWN:
-                        engine.move_down()
-                        iteration += 1
-                    elif event.key == pygame.K_LEFT:
-                        engine.move_left()
-                        iteration += 1
-                    elif event.key == pygame.K_RIGHT:
-                        engine.move_right()
-                        iteration += 1
-                else:
-                    if event.key == pygame.K_RETURN:
-                        create_game()
-    else:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                engine.working = False
-        if engine.game_process:
-            actions = [
-                engine.move_right,
-                engine.move_left,
-                engine.move_up,
-                engine.move_down,
+            self.handle(event)
+
+    @staticmethod
+    def display_update():
+        pygame.display.update()
+
+    @staticmethod
+    def quit():
+        pygame.display.quit()
+        pygame.quit()
+
+
+class Game(PyGameHandler, AbcGame):
+
+    def __init__(self):
+        super().__init__()
+        self._sprite_size = 60
+        self._iteration = 0
+        self._hero = None
+        self.engine = None
+        self.drawer = None
+        self.service = None
+        self._hero_config = HeroConfig()
+        self._hero = None
+        self._keyboard_control = KEYBOARD_CONTROL
+        self._actions = []
+
+    def init_actions(self):
+        if not self._keyboard_control:
+            self._actions = [
+                self.engine.move_right,
+                self.engine.move_left,
+                self.engine.move_up,
+                self.engine.move_down,
             ]
-            answer = np.random.randint(0, 100, 4)
-            prev_score = engine.score
-            move = actions[np.argmax(answer)]()
-            state = pygame.surfarray.array3d(gameDisplay)
-            reward = engine.score - prev_score
-            print(reward)
-        else:
-            create_game()
 
-    gameDisplay.blit(drawer, (0, 0))
-    drawer.draw(gameDisplay)
+    def create_game(self):
+        self.engine = logic.GameEngine()
+        self.service.service_init(self._sprite_size)
 
-    pygame.display.update()
+        self._hero = Hero(self._hero_config.base_stats,
+                          service.create_sprite(self._hero_config.path,
+                                                self._sprite_size)
+                          )
 
-pygame.display.quit()
-pygame.quit()
-exit(0)
+        self.service.reload_game(self.engine, self._hero)
+        self.set_drawer()
+        logic.GameEngine.sprite_size = self._sprite_size
+        self.drawer.connect_engine(self.engine)
+        self.reset_iteration()
+
+    def set_drawer(self):
+        handle = ScreenHandle()
+        help_handle = HelpWindow((700, 500), pygame.SRCALPHA)
+        help_handle.set_successor(handle)
+        info = InfoWindow((160, 600))
+        info.set_next_coord((50, 50))
+        info.set_successor(help_handle)
+        progress_bar = ProgressBar((640, 120))
+        progress_bar.set_next_coord((640, 0))
+        progress_bar.set_successor(info)
+        surface = GameSurface((640, 480), pygame.SRCALPHA)
+        surface.set_next_coord((0, 480))
+        surface.set_successor(progress_bar)
+        self.drawer = surface
+
+    def reset_sprite_size(self):
+        self.engine.sprite_size = self._sprite_size
+        self._hero.sprite = service.create_sprite(
+            self._hero_config.path, self._sprite_size
+        )
+        service.service_init(self._sprite_size, False)
+
+        logic.GameEngine.sprite_size = self._sprite_size
+        self.drawer.connect_engine(self.engine)
+
+        self.reset_iteration()
+
+    def reset_iteration(self):
+        self._iteration = 0
+
+    def exit(self):
+        self.engine.working = False
+
+    def show_help(self):
+        self.engine.show_help = not self.engine.show_help
+
+    def key_plus_down(self):
+        if not self.is_control_game():
+            return
+        self._sprite_size += 1
+        self.reset_sprite_size()
+
+    def key_minus_down(self):
+        if not self.is_control_game():
+            return
+        self._sprite_size -= 1
+        self.reset_sprite_size()
+
+    def reset(self):
+        if not self.is_control_game():
+            return
+        self.create_game()
+
+    def is_game_process(self):
+        return self.engine.game_process
+
+    def inc_iteration(self):
+        self._iteration += 1
+
+    def move_up(self):
+        if not (self.is_control_game() and
+                self.is_game_process()):
+            return
+        self.engine.move_up()
+        self.inc_iteration()
+
+    def move_down(self):
+        if not (self.is_control_game() and
+                self.is_game_process()):
+            return
+        self.engine.move_down()
+        self.inc_iteration()
+
+    def move_left(self):
+        if not (self.is_control_game() and
+                self.is_game_process()):
+            return
+        self.engine.move_left()
+        self.inc_iteration()
+
+    def move_right(self):
+        if not (self.is_control_game() and
+                self.is_game_process()):
+            return
+        self.engine.move_right()
+        self.inc_iteration()
+
+    def return_(self):
+        if not self.is_control_game() and \
+                self.is_game_process():
+            return
+        self.create_game()
+
+    def is_control_game(self):
+        return self._keyboard_control
+
+    def run(self):
+
+        self.init_actions()
+        while self.engine.working:
+            try:
+                self.event_loop()
+            except KeyboardInterrupt:
+                self.exit()
+            except pygame.error as e:
+                print(e)
+                self.exit()
+
+            if not self.is_control_game():
+                if self.engine.game_process:
+                    prev_score = self.engine.score
+                    self._actions[random.randint(0, 3)]()
+                    state = pygame.surfarray.array3d(self.display)
+                    reward = self.engine.score - prev_score
+                    print(reward)
+                else:
+                    self.create_game()
+
+            self.display.blit(self.drawer, (0, 0))
+            self.drawer.draw(self.display)
+            self.display_update()
+
+        self.quit()
+
+
+if __name__ == '__main__':
+    game = Game()
+    game.create_game()
+    game.run()
