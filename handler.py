@@ -14,6 +14,7 @@ class PyGameEventMap:
     MOVE_DOWN = 'move_down'
     MOVE_RIGHT = 'move_right'
     MOVE_LEFT = 'move_left'
+    RETURN = 'return_'
 
     def __init__(self):
 
@@ -26,7 +27,8 @@ class PyGameEventMap:
             pygame.K_UP:            self.MOVE_UP,
             pygame.K_DOWN:          self.MOVE_DOWN,
             pygame.K_LEFT:          self.MOVE_LEFT,
-            pygame.K_RIGHT:         self.MOVE_RIGHT
+            pygame.K_RIGHT:         self.MOVE_RIGHT,
+            pygame.K_RETURN:        self.RETURN
         }
 
         self._event_types = {
@@ -48,14 +50,11 @@ class ABCEventHandler(ABC):
         self._pause = True
         self._show_help = False
 
-    def stop(self):
-        self._exit = True
-
     def exit(self):
-        self._exit = True
+        pass
 
     def show_help(self):
-        self._show_help = not self._show_help
+        pass
 
     def reset(self):
         pass
@@ -76,6 +75,9 @@ class ABCEventHandler(ABC):
         pass
 
     def move_left(self):
+        pass
+
+    def return_(self):
         pass
 
     @abstractmethod
